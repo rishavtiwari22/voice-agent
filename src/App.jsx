@@ -229,8 +229,8 @@ const App = () => {
     <div>
       <header>
         <h1>AI Voice-Controlled Agent</h1>
-        <p>To search for any web page, speak 🗣️ "open Your-command".</p>
-        <p>For playing a song, speak 🗣️ "play Your-command".</p>
+        <p>To search for any web page, speak 🗣️ "open Command-Name".</p>
+        <p>For playing a song, speak 🗣️ "play Song-Name".</p>
       </header>
       <div className="container">
         <div className="left-panel">
