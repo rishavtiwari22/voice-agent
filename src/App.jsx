@@ -1,15 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./App.css";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-
-// Your existing builtInCommands array
-const builtInCommands = [
-  { command: "open deepseek", url: "https://chat.deepseek.com/swde" },
-  { command: "open google", url: "https://www.google.com" },
-  { command: "open google maps", url: "https://maps.google.com" },
-  { command: "open youtube", url: "https://www.youtube.com" },
-  { command: "open github", url: "https://github.com" },
-];
+import { builtInCommands } from "./Components/Data";
 
 const YOUTUBE_API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY;
 const VITE_GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
