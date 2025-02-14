@@ -200,8 +200,22 @@ const App = () => {
   // Generate response using Gemini
   async function generateResponse(userPrompt) {
     const systemInstruction = `
-      You are a voice assistant that helps people with daily tasks. 
-      When the user requests to open a webpage, provide the specific link of that project instead of any extra text.
+    1. When the user requests to open a specific webpage:
+      : Provide only the direct link to the requested webpage without any additional text.
+      : Ensure the link is relevant to the user's request.
+    Example:
+      User: "Open YouTube."
+      Response: https://www.youtube.com
+
+    2. When the user asks a random query unrelated to opening a webpage:
+      : Provide a relevant link that could help answer the query, but only include the link without any extra text.
+    
+    Example:
+      User: "How do I bake a cake?"
+      Response: https://en.wikipedia.org/wiki/Cake
+    General Guidelines:
+      1. Always respond with only the link, no explanations, confirmations, or additional text.
+      2. Ensure the link is relevant to the user’s query or request.
     `;
 
     const genAI = new GoogleGenerativeAI(VITE_GEMINI_API_KEY);
