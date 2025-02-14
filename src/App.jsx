@@ -1,13 +1,8 @@
 import React, { useState, useEffect } from "react";
 import "./App.css";
 
-(async () => {
-  const { GoogleGenerativeAi } = await import('@google/generative-ai');
-  GoogleGenerativeAi();
-})();
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-
-// Built-in commands
 const builtInCommands = [
   { command: "open deepseek", url: "https://chat.deepseek.com/" },
   { command: "open google", url: "https://www.google.com" },
@@ -212,7 +207,7 @@ const App = () => {
       When the user requests to open a webpage, provide the specfic link of that project insteas of any extra text.
     `;
   
-    const genAI = new GoogleGenerativeAi(VITE_GEMINI_API_KEY);
+    const genAI = new GoogleGenerativeAI(VITE_GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
   
     const prompt = `${systemInstruction}\nUser: ${userPrompt}`;
