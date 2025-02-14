@@ -1,63 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "./App.css";
-
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+// Your existing builtInCommands array
 const builtInCommands = [
-  { command: "open deepseek", url: "https://chat.deepseek.com/" },
+  { command: "open deepseek", url: "https://chat.deepseek.com/swde" },
   { command: "open google", url: "https://www.google.com" },
+  { command: "open google maps", url: "https://maps.google.com" },
   { command: "open youtube", url: "https://www.youtube.com" },
-  { command: "open chatgpt", url: "https://chat.openai.com" },
-  { command: "open gmail", url: "https://mail.google.com/" },
-  { command: "open linkedin", url: "https://www.linkedin.com/" },
-  { command: "open github", url: "https://github.com/" },
-  { command: "open hotstar", url: "https://www.hotstar.com/in/sports" },
-  { command: "open vercel", url: "https://vercel.com/" },
-  { command: "open sheet", url: "https://docs.google.com/spreadsheets/u/0/" },
-  { command: "open docs", url: "https://docs.google.com/document/u/0/" },
-  { command: "open calendar", url: "https://calendar.google.com/" },
-  { command: "open maps", url: "https://www.google.com/maps" },
-  { command: "open news", url: "https://news.google.com/" },
-  { command: "open amazon", url: "https://www.amazon.com/" },
-  { command: "open weather", url: "https://www.weather.com/" },
-  { command: "open wikipedia", url: "https://www.wikipedia.org/" },
-  { command: "open facebook", url: "https://www.facebook.com" },
-  { command: "open instagram", url: "https://www.instagram.com" },
-  { command: "open twitter", url: "https://twitter.com" },
-  { command: "open netflix", url: "https://www.netflix.com/" },
-  { command: "open reddit", url: "https://www.reddit.com" },
-  { command: "open zoom", url: "https://zoom.us/" },
-  { command: "open spotify", url: "https://www.spotify.com/" },
-  { command: "open whatsapp", url: "https://web.whatsapp.com/" },
-  { command: "open slack", url: "https://slack.com/" },
-  { command: "open trello", url: "https://trello.com/" },
-  { command: "open notion", url: "https://www.notion.so/" },
-  { command: "open discord", url: "https://discord.com/" },
-  { command: "open pinterest", url: "https://www.pinterest.com/" },
-  { command: "open medium", url: "https://medium.com/" },
-  { command: "open quora", url: "https://www.quora.com/" },
-  { command: "open microsoft", url: "https://www.microsoft.com/" },
-  { command: "open apple", url: "https://www.apple.com/" },
-  { command: "open adobe", url: "https://www.adobe.com/" },
-  { command: "open bing", url: "https://www.bing.com/" },
-  { command: "open yelp", url: "https://www.yelp.com/" },
-  { command: "open dropbox", url: "https://www.dropbox.com/" },
-  { command: "open airbnb", url: "https://www.airbnb.com/" },
-  { command: "open coursera", url: "https://www.coursera.org/" },
-  { command: "open udemy", url: "https://www.udemy.com/" },
-  { command: "open ebay", url: "https://www.ebay.com/" },
-  { command: "open flipkart", url: "https://www.flipkart.com/" },
-  { command: "open booking", url: "https://www.booking.com/" },
-  { command: "open canva", url: "https://www.canva.com/" },
-  { command: "open makemytrip", url: "https://www.makemytrip.com/" },
-  { command: "open expedia", url: "https://www.expedia.com/" },
-  { command: "open kayak", url: "https://www.kayak.com/" },
-  { command: "open tripadvisor", url: "https://www.tripadvisor.com/" },
-  { command: "open trivago", url: "https://www.trivago.com/" },
-  { command: "open skyscanner", url: "https://www.skyscanner.net/" },
-  { command: "open goibibo", url: "https://www.goibibo.com/" },
-  { command: "open cleartrip", url: "https://www.cleartrip.com/" },
-  { command: "open irctc", url: "https://www.irctc.co.in/nget/train-search" },
+  { command: "open github", url: "https://github.com" },
 ];
 
 const YOUTUBE_API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY;
@@ -71,11 +22,24 @@ const App = () => {
   const [commandInput, setCommandInput] = useState("");
   const [urlInput, setUrlInput] = useState("");
 
-  // Load custom commands from localStorage on mount
+  // Use a ref to always access the latest customCommands
+  const customCommandsRef = useRef(customCommands);
+  useEffect(() => {
+    customCommandsRef.current = customCommands;
+  }, [customCommands]);
+
+  // Load custom commands from localStorage
   useEffect(() => {
     const storedCommands = localStorage.getItem(STORAGE_KEY);
     if (storedCommands) {
-      setCustomCommands(JSON.parse(storedCommands));
+      try {
+        const parsedCommands = JSON.parse(storedCommands);
+        setCustomCommands(parsedCommands);
+      } catch (error) {
+        console.error("Failed to parse custom commands:", error);
+        localStorage.removeItem(STORAGE_KEY);
+        setCustomCommands([]);
+      }
     }
   }, []);
 
@@ -88,7 +52,7 @@ const App = () => {
   // Add a new custom command
   const addCustomCommand = (e) => {
     e.preventDefault();
-    const newCommand = commandInput.trim().toLowerCase();
+    const newCommand = `open ${commandInput.trim().toLowerCase()}`; // Ensure "open" is prefixed
     const newUrl = urlInput.trim();
     if (newCommand && newUrl) {
       const updatedCommands = [...customCommands, { command: newCommand, url: newUrl }];
@@ -113,22 +77,59 @@ const App = () => {
   };
 
   // Handle voice commands
-  const handleCommand = async (spokenCommand) => {
-    const allCommands = [...builtInCommands, ...customCommands];
-    for (const item of allCommands) {
-      if (spokenCommand.includes(item.command)) {
+  const handleCommand = async (normalizedCommand) => {
+    const spokenCommand = normalizedCommand.toLowerCase();
+
+    // Extract the part after "open" for multi-word commands
+    const commandAfterOpen = spokenCommand.replace("open", "").trim();
+
+    // Check custom commands first
+    for (const item of customCommandsRef.current) {
+      if (item.command === `open ${commandAfterOpen}`) {
+        console.log("Matched custom command:", item.command);
         window.open(item.url, "_blank");
-        return;
+        return; // Exit if a match is found
       }
     }
+
+    // Check built-in commands next
+    for (const item of builtInCommands) {
+      if (item.command === `open ${commandAfterOpen}`) {
+        console.log("Matched built-in command:", item.command);
+        window.open(item.url, "_blank");
+        return; // Exit if a match is found
+      }
+    }
+
+    // If no match is found, use Gemini
+    if (spokenCommand.startsWith("open")) {
+      console.log("No match found. Using Gemini to generate a response...");
+      const command = await generateResponse(spokenCommand);
+      if (command) {
+        window.open(command, "_blank");
+      }
+      return;
+    }
+
+    // Handle other commands like time
     if (spokenCommand.includes("what is the time")) {
       const time = new Date().toLocaleTimeString();
       alert(`The current time is ${time}`);
       return;
     }
-    let command = await generateResponse(spokenCommand);
-    window.open(command, "_blank");
-    return;
+
+    // Handle YouTube search
+    if (spokenCommand.startsWith("play")) {
+      const songName = spokenCommand.replace("play", "").trim();
+      const youtubeLink = await handleVoiceCommand(spokenCommand);
+      if (youtubeLink) {
+        window.open(youtubeLink, "_blank");
+      }
+      return;
+    }
+
+    // If no command matches, show an error or fallback message
+    setStatus(`Command not recognized: "${spokenCommand}"`);
   };
 
   // Handle YouTube search
@@ -168,12 +169,7 @@ const App = () => {
       recognition.onresult = async (event) => {
         const spokenCommand = event.results[0][0].transcript.toLowerCase();
         setStatus(`You said: "${spokenCommand}"`);
-        if (spokenCommand.startsWith("open")) {
-          handleCommand(spokenCommand);
-        } else {
-          const command = await handleVoiceCommand(spokenCommand);
-          if (command) window.open(command, "_blank");
-        }
+        await handleCommand(spokenCommand);
       };
 
       recognition.onstart = () => setStatus("Speech recognition has started.");
@@ -199,21 +195,22 @@ const App = () => {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isListening]); 
+  }, [isListening]);
 
+  // Generate response using Gemini
   async function generateResponse(userPrompt) {
     const systemInstruction = `
       You are a voice assistant that helps people with daily tasks. 
-      When the user requests to open a webpage, provide the specfic link of that project insteas of any extra text.
+      When the user requests to open a webpage, provide the specific link of that project instead of any extra text.
     `;
-  
+
     const genAI = new GoogleGenerativeAI(VITE_GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-  
+
     const prompt = `${systemInstruction}\nUser: ${userPrompt}`;
     const result = await model.generateContent(prompt);
     const aiResponse = result.response.text();
-  
+
     if (userPrompt.toLowerCase().startsWith("play")) {
       const songName = userPrompt.replace("play", "").trim();
       const youtubeLink = await searchYouTube(songName);
@@ -224,13 +221,12 @@ const App = () => {
     }
   }
 
-
   return (
     <div>
       <header>
         <h1>AI Voice-Controlled Agent</h1>
-        <p>To search for any web page, speak 🗣️ "open Command-Name".</p>
-        <p>For playing a song, speak 🗣️ "play Song-Name".</p>
+        <p>To search for any web page, speak 🗣️ "open Your-command".</p>
+        <p>For playing a song, speak 🗣️ "play Your-command".</p>
       </header>
       <div className="container">
         <div className="left-panel">
@@ -248,7 +244,7 @@ const App = () => {
                   type="text"
                   value={commandInput}
                   onChange={(e) => setCommandInput(e.target.value)}
-                  placeholder="Enter command keyword (e.g., 'open github')"
+                  placeholder="Enter command keyword (e.g., 'github')"
                   required
                 />
                 <input
@@ -275,7 +271,7 @@ const App = () => {
               ) : (
                 customCommands.map((cmd, index) => (
                   <div key={index} className="command-item">
-                    <span><strong>{cmd.command.split(" ").pop()}</strong></span>
+                    <span><strong>{cmd.command}</strong></span>
                     <button onClick={() => removeCommand(index)}>Remove</button>
                   </div>
                 ))
