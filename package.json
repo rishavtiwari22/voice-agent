@@ -6,8 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "serve": "vite preview",
-    "postinstall": "npm install --legacy-peer-deps"
+    "serve": "vite preview"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
