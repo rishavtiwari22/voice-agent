@@ -265,7 +265,7 @@ const App = () => {
             </div>
           </section>
           <footer className="left-footer">
-            <p>© 2025 Rishav Tiwari</p>
+            <p>© 2025 ai.navgurukul.org</p>
           </footer>
         </div>
         <div className="right-panel">
